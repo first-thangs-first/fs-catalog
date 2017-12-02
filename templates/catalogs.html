@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Catalog</title>
+</head>
+<body>
+    <h1>Catalog App</h1>
+    <main>
+        <section>
+            <h2>Categories</h2>
+            <div>
+                <ul>
+                    {% for category in categories %}
+                    <li>
+                        <a href="{{url_for('list_category',category_id=category.id)}}">{{category.name}}</a>
+                    </li>
+                    {%endfor%}
+                </ul>
+            </div>
+        </section>
+        <section>
+            {% if logged_in %}
+            <div><a href="{{url_for('add_item')}}">Add Item</a></div>
+            {% endif %}
+            <h2>Latest Items</h2>
+            <div>
+                <ul>
+                    {% for item in items %}
+                    <li>
+                        <a href="{{url_for('show_item',category_id=item.category_id, item_id=item.id)}}">
+                            {{item.name}}
+                        </a>
+                        </li>
+                    {% endfor %}
+                </ul>
+            </div>
+        </section>
+    </main>
+</body>
+</html>
