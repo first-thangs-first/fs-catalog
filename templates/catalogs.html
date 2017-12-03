@@ -30,7 +30,7 @@
                 <ul>
                     {% for item in items %}
                     <li>
-                        <a href="{{url_for('show_item',category_id=item.category_id, item_id=item.id)}}">
+                        <a href="{{url_for('show_item', category_id=item.category_id, item_id=item.id)}}">
                             {{item.name}}
                         </a>
                         </li>

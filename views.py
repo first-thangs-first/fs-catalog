@@ -40,9 +40,9 @@ def list_category(category_id):
 @app.route('/catalog/category/<category_id>/item/<item_id>')
 def show_item(category_id, item_id):
     catalog_item = session.query(CatalogItem).filter_by(category_id=category_id, id=item_id).one()
-    return render_template('detailed-item.html',item=catalog_item)
+    return render_template('detailed-item.html', item=catalog_item)
 
-@app.route('/catalog/item/add', methods=["GET","POST"])
+@app.route('/catalog/item/add', methods=["GET", "POST"])
 def add_item():
     categories = session.query(Category).all()
     if request.method == "POST":
