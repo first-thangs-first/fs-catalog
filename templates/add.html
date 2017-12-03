@@ -1,48 +1,37 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta http-equiv="X-UA-Compatible" content="ie=edge">
-    <title>Document</title>
-</head>
-<body>
-    <h1>Catalog App</h1>
-    <main>
-        <section>
-            <h2>Add Item</h2>
-            <ul>
-                {% for message in get_flashed_messages() %}
-                <li>{{message}}</li>
-                {% endfor %}
-            </ul>
-            <form action="{{url_for('add_item')}}" method="POST">
-                <label for="name">Title</label>
-                {% if name %}
-                <input type="text" name="name" value="{{name}}">
+{% extends "layout.html" %}
+{% block body %}
+<section>
+    <h2>Add Item</h2>
+    <ul>
+        {% for message in get_flashed_messages() %}
+        <li>{{message}}</li>
+        {% endfor %}
+    </ul>
+    <form action="{{url_for('add_item')}}" method="POST">
+        <label for="name">Title</label>
+        {% if name %}
+        <input type="text" name="name" value="{{name}}">
+        {% else %}
+        <input type="text" name="name">
+        {% endif %}
+        <br/>
+        <label for="description">Description</label>
+        <br/>
+        <textarea name="description" cols="30" rows="10">{% if description %}{{description}}{% endif %}</textarea>
+        <br/>
+        <label for="category">Category</label>
+        <select name="category">
+            {% for category in categories %}
+                {% if category.name == prev_selected_category %}
+                <option value="{{category.name}}" selected>{{category.name}}</option>
                 {% else %}
-                <input type="text" name="name">
+                <option value="{{category.name}}">{{category.name}}</option>
                 {% endif %}
-                <br/>
-                <label for="description">Description</label>
-                <br/>
-                <textarea name="description" cols="30" rows="10">{% if description %}{{description}}{% endif %}</textarea>
-                <br/>
-                <label for="category">Category</label>
-                <select name="category">
-                    {% for category in categories %}
-                        {% if category.name == prev_selected_category %}
-                        <option value="{{category.name}}" selected>{{category.name}}</option>
-                        {% else %}
-                        <option value="{{category.name}}">{{category.name}}</option>
-                        {% endif %}
-                    {% endfor %}
-                </select>
-                <br/>
-                <input type="submit" value="Create">
-            </form>
-            <a href="{{url_for('index')}}"><button>Cancel</button></a>
-        </section>
-    </main>
-</body>
-</html>
+            {% endfor %}
+        </select>
+        <br/>
+        <input type="submit" value="Create">
+    </form>
+    <a href="{{url_for('index')}}"><button>Cancel</button></a>
+</section>
+{% endblock %}

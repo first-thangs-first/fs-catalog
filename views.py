@@ -85,7 +85,7 @@ def delete_item(item_id):
     if request.method == 'POST':
         session.delete(item)
         session.commit()
-        redirect(url_for('list_category', category=item.category_id))
+        return redirect(url_for('list_category', category_id=item.category_id))
     return render_template('delete.html', item=item)
 
 @app.route('/api/v1.0/catalogs')
