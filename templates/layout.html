@@ -4,12 +4,37 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <script src="//ajax.googleapis.com/ajax/libs/jquery/1.8.2/jquery.min.js"></script>
+    <script src="//apis.google.com/js/platform.js?onload=start"></script>
     <title>Catalog</title>
 </head>
 <body>
-    <h1><a href="{{url_for('index')}}">Catalog App</a></h1>
+    <nav>
+        <h1><a href="{{url_for('index')}}">Catalog App</a></h1>
+        <h3><a href="{{url_for('login')}}">Login</a></h3>
+        <h3><a href="{{url_for('logout')}}">Logout</a></h3>
+        <!-- <div id="signinButton">
+            <span class="g-signin"
+                data-scope="openid email"
+                data-clientid="928710376325-tka4rqa6sbnb4f8s25cvub1058v4e3mn.apps.googleusercontent.com"
+                data-redirecturi="postmessage"
+                data-accesstype="offline"
+                data-cookiepolicy="single_host_origin"
+                data-callback="signInCallback"
+                data-approvalprompt="force">
+            </span>
+        </div> -->
+    </nav>
+    
+
     <main>
         {% block body %}{% endblock %}
     </main>
+    <script>
+        // gets called when google login return
+        function signInCallback(data) {
+            console.log(data);
+        }
+    </script>
 </body>
 </html>
