@@ -10,6 +10,8 @@ import flask, os
 ## google oauth
 import google.oauth2.credentials
 import google_auth_oauthlib.flow
+from googleapiclient.discovery import build
+
 import httplib2, requests
 
 auth = HTTPBasicAuth()
@@ -35,9 +37,14 @@ def get_category_by_name(category_name):
 def index():
     categories = session.query(Category).all()
     latest_items = session.query(CatalogItem).order_by(desc(CatalogItem.id))[0:10]
-
-    logged_in = True
-    return render_template('catalogs.html', items=latest_items, categories=categories, logged_in=logged_in)
+    user = None
+    if 'auth' in flask.session:
+        token = flask.session['auth']
+        user_id = User.verify_auth_token(token)
+        if user_id:
+            user = session.query(User).filter_by(id=user_id).first()
+    
+    return render_template('catalogs.html', items=latest_items, categories=categories, user=user)
 
 @app.route('/login')
 def login():
@@ -64,7 +71,7 @@ def login():
 @app.route('/logout')
 def logout():
     if 'credentials' not in flask.session:
-        return ('not logged in')
+        return redirect(url_for('index'))
     credentials = google.oauth2.credentials.Credentials(
         **flask.session['credentials'])
     revoke = requests.post('https://accounts.google.com/o/oauth2/revoke',
@@ -73,9 +80,10 @@ def logout():
     status_code = getattr(revoke, 'status_code')
     if status_code == 200:
         del flask.session['credentials']
-        return 'credentials revoked'
+        del flask.session['auth']
+        return redirect(url_for('index'))
     else:
-        return 'error occurred'
+        return 'error occurred revoking third party authorization'
 
 @app.route('/gconnect')
 def gconnect():
@@ -109,10 +117,16 @@ def gconnect():
     data = answer.json()
 
     name = data['name']
+    email = data['email']
     picture = data['picture']
-    print ("!!! this is data %s" % name)
-    print data
-    print 'printed data'
+
+    user = session.query(User).filter_by(email=email).first()
+    if not user:
+        user = User(name=name, email=email, picture=picture)
+        session.add(user)
+        session.commit()
+    token = user.generate_auth_token()
+    flask.session['auth'] = token
     return flask.redirect(url_for('index'))
 
 @app.route('/catalog/category/<category_id>/items')

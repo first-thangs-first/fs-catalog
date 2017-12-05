@@ -11,8 +11,12 @@
 <body>
     <nav>
         <h1><a href="{{url_for('index')}}">Catalog App</a></h1>
-        <h3><a href="{{url_for('login')}}">Login</a></h3>
+        {% if user %}
         <h3><a href="{{url_for('logout')}}">Logout</a></h3>
+        {% else %}
+        <h3><a href="{{url_for('login')}}">Login</a></h3>
+        {% endif %}
+        <h3>Welcome {{user.name}}</h3>
         <!-- <div id="signinButton">
             <span class="g-signin"
                 data-scope="openid email"
