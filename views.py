@@ -58,12 +58,20 @@ def get_user():
         return user
 
 @auth.verify_password
-def verify_password(token):
+def verify_password(token, x):
     if 'auth' in flask.session:
-        user_id = User.verify_auth_token(flask.session['auth'])
+        user_id = User.verify_auth_token(token)
         if user_id:
             return True
     return False
+
+# this route is for testing purpose only
+@app.route('/token')
+def get_token():
+    if 'auth' in flask.session:
+        return flask.session['auth']
+    else:
+        return "Sign in first to receive token"
     
 # routes
 @app.route('/')
@@ -242,6 +250,7 @@ def delete_item(item_id):
     return render_template('delete.html', item=item, user=user)
 
 @app.route('/api/v1.0/catalogs')
+@auth.login_required
 def api_list_catalogs():
     result = {}
     for category in session.query(Category).all():
