@@ -243,7 +243,15 @@ def delete_item(item_id):
 
 @app.route('/api/v1.0/catalogs')
 def api_list_catalogs():
-    return 'listing all items for catalogs api'
+    result = {}
+    for category in session.query(Category).all():
+        result[category.name] = []
+        items = session.query(CatalogItem).filter_by(category_id=category.id)
+        for item in items:
+            result[category.name].append(item.serialize)
+    json_result = jsonify(catalogs=result)
+
+    return json_result
 
 if __name__ == '__main__':
     app.debug = True
