@@ -14,37 +14,73 @@ from googleapiclient.discovery import build
 
 import httplib2, requests
 
-auth = HTTPBasicAuth()
 
 engine = create_engine('sqlite:///catalog.db')
-
 Base.metadata.bind = engine
 DBSession = sessionmaker(bind=engine)
 session = DBSession()
+auth = HTTPBasicAuth()
 app = Flask(__name__)
 
 CLIENT_SECRETS_FILE = 'client_secrets.json'
 GOOGLE_SCOPES = ['profile', 'email', 'openid']
-# helpers to be moved to separate class
+# TODO helpers to be moved to separate class
 def get_category_by_name(category_name):
     for c in session.query(Category).all():
         if c.name.lower() == category_name.lower():
             return c
     return None
 
+def revoke_google_access():
+    credentials = google.oauth2.credentials.Credentials(
+        **flask.session['credentials'])
+    revoke = requests.post('https://accounts.google.com/o/oauth2/revoke',
+                           params={'token': credentials.token},
+                           headers={'content-type': 'application/x-www-form-urlencoded'})
+    status_code = getattr(revoke, 'status_code')
+    return status_code
+
+def get_user():
+    user = None
+    if 'auth' in flask.session:
+        token = flask.session['auth']
+        user_id = User.verify_auth_token(token)
+        if user_id == 'Signature Expired':
+            print 'signature expired, deleting auth and credentials from session'
+            del flask.session['auth']
+            del flask.session['credentials']
+            return None
+        if user_id:
+            user = session.query(User).filter_by(id=user_id).first()
+            return user
+    else:
+        print 'auth not in session', flask.session
+        return user
+
+@auth.verify_password
+def verify_password(token):
+    if 'auth' in flask.session:
+        user_id = User.verify_auth_token(flask.session['auth'])
+        if user_id:
+            return True
+    return False
+    
 # routes
 @app.route('/')
 def index():
     categories = session.query(Category).all()
     latest_items = session.query(CatalogItem).order_by(desc(CatalogItem.id))[0:10]
-    user = None
-    if 'auth' in flask.session:
-        token = flask.session['auth']
-        user_id = User.verify_auth_token(token)
-        if user_id:
-            user = session.query(User).filter_by(id=user_id).first()
+    user = get_user()
+    # if 'auth' in flask.session:
+    #     token = flask.session['auth']
+    #     user_id = User.verify_auth_token(token)
+    #     if user_id:
+    #         user = session.query(User).filter_by(id=user_id).first()
     
-    return render_template('catalogs.html', items=latest_items, categories=categories, user=user)
+    return render_template('catalogs.html',
+                           items=latest_items,
+                           categories=categories,
+                           user=user)
 
 @app.route('/login')
 def login():
@@ -98,7 +134,6 @@ def gconnect():
     flow.fetch_token(authorization_response=authorization_response)
 
     # Store credentials in the session
-    # refactor to safe these in database
     credentials = flow.credentials
     flask.session['credentials'] = {
         'token': credentials.token,
@@ -108,18 +143,15 @@ def gconnect():
         'client_secret': credentials.client_secret,
         'scopes': credentials.scopes}
 
-    #Get user info
+    #Get user info, safe first time user to database
     h = httplib2.Http()
     userinfo_url =  "https://www.googleapis.com/oauth2/v1/userinfo"
     params = {'access_token': credentials.token, 'alt':'json'}
     answer = requests.get(userinfo_url, params=params)
-    
     data = answer.json()
-
     name = data['name']
     email = data['email']
     picture = data['picture']
-
     user = session.query(User).filter_by(email=email).first()
     if not user:
         user = User(name=name, email=email, picture=picture)
@@ -127,6 +159,7 @@ def gconnect():
         session.commit()
     token = user.generate_auth_token()
     flask.session['auth'] = token
+
     return flask.redirect(url_for('index'))
 
 @app.route('/catalog/category/<category_id>/items')
@@ -134,21 +167,28 @@ def list_category(category_id):
     categories = session.query(Category).all()
     items = session.query(CatalogItem).filter_by(category_id=category_id).all()
     category = session.query(Category).filter_by(id=category_id).one()
-    return render_template('items.html', categories=categories, items=items, category=category)
+    user = get_user()
+    return render_template('items.html', categories=categories, items=items, category=category, user=user)
 
 @app.route('/catalog/category/<category_id>/item/<item_id>')
 def show_item(category_id, item_id):
     catalog_item = session.query(CatalogItem).filter_by(category_id=category_id, id=item_id).one()
-    return render_template('detailed-item.html', item=catalog_item)
+    user = get_user()
+    return render_template('detailed-item.html', item=catalog_item, user=user)
 
 @app.route('/catalog/item/add', methods=["GET", "POST"])
 def add_item():
+    user = get_user()
+    if not user:
+        return redirect(url_for('unauthorized'))
+
     categories = session.query(Category).all()
     if request.method == "POST":
         if request.form['name'] and request.form['description']:    
             item = CatalogItem(name=request.form['name'])
             item.description = request.form['description']
             item.category_id = get_category_by_name(request.form['category']).id
+            item.user_id = user.id
             session.add(item)
             session.commit()
             return redirect(url_for('show_item', category_id=item.category_id, item_id=item.id))
@@ -159,15 +199,31 @@ def add_item():
                                    description=request.form['description'],
                                    prev_selected_category=request.form['category'],
                                    categories=categories)
-    return render_template('add.html', categories=categories)
+    return render_template('add.html', categories=categories, user=user)
+
+
+@app.route('/unauthorized')
+def unauthorized():
+    user = get_user()
+    if user == 'Signature Expired':
+        user = None
+    
+    return render_template('unauthorized.html', user=user)
 
 @app.route('/catalog/item/<item_id>/edit', methods=["GET","POST"])
 def edit_item(item_id):
+    user = get_user()
+    if not user:
+        print 'user error', user
+        return redirect(url_for('unauthorized'))
     item = session.query(CatalogItem).filter_by(id=item_id).one()
+    if item.user_id is not user.id:
+        print 'user id not same as created id'
+        return redirect(url_for('unauthorized'))
     if request.method == 'POST':
         if (not request.form['name']) or (not request.form['description']):
-           flash('Can not have empty name or description')
-           return redirect(url_for('edit_item',item_id=item_id))
+            flash('Can not have empty name or description')
+            return redirect(url_for('edit_item',item_id=item_id))
         category = get_category_by_name(request.form['category'])
         item.name = request.form['name']
         item.description = request.form['description']
@@ -176,16 +232,21 @@ def edit_item(item_id):
         session.commit()
         return redirect(url_for('show_item', category_id=category.id, item_id=item_id))
     categories = session.query(Category).all()
-    return render_template('edit.html',item=item, categories=categories)
+    return render_template('edit.html',item=item, categories=categories, user=user)
+    
 
 @app.route('/catalog/item/<item_id>/delete',methods=["GET","POST"])
 def delete_item(item_id):
+    user = get_user()
+    if not user:
+        return redirect(url_for('unauthorized'))
+
     item = session.query(CatalogItem).filter_by(id=item_id).one()
     if request.method == 'POST':
         session.delete(item)
         session.commit()
         return redirect(url_for('list_category', category_id=item.category_id))
-    return render_template('delete.html', item=item)
+    return render_template('delete.html', item=item, user=user)
 
 @app.route('/api/v1.0/catalogs')
 def api_list_catalogs():

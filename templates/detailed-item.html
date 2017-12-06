@@ -5,6 +5,7 @@
     <div>
         description {{item.description}}
     </div>
+    {% if user %}
     <div>
         <form action="{{url_for('edit_item', item_id=item.id)}}" style="display:inline">
             <input type="submit" value="Edit">
@@ -13,5 +14,6 @@
             <input type="submit" value="Delete">
         </form>
     </div>
+    {% endif %}
 </section>
 {% endblock %}
