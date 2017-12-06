@@ -71,12 +71,6 @@ def index():
     categories = session.query(Category).all()
     latest_items = session.query(CatalogItem).order_by(desc(CatalogItem.id))[0:10]
     user = get_user()
-    # if 'auth' in flask.session:
-    #     token = flask.session['auth']
-    #     user_id = User.verify_auth_token(token)
-    #     if user_id:
-    #         user = session.query(User).filter_by(id=user_id).first()
-    
     return render_template('catalogs.html',
                            items=latest_items,
                            categories=categories,
@@ -181,7 +175,6 @@ def add_item():
     user = get_user()
     if not user:
         return redirect(url_for('unauthorized'))
-
     categories = session.query(Category).all()
     if request.method == "POST":
         if request.form['name'] and request.form['description']:    
@@ -207,7 +200,6 @@ def unauthorized():
     user = get_user()
     if user == 'Signature Expired':
         user = None
-    
     return render_template('unauthorized.html', user=user)
 
 @app.route('/catalog/item/<item_id>/edit', methods=["GET","POST"])
@@ -233,15 +225,16 @@ def edit_item(item_id):
         return redirect(url_for('show_item', category_id=category.id, item_id=item_id))
     categories = session.query(Category).all()
     return render_template('edit.html',item=item, categories=categories, user=user)
-    
+
 
 @app.route('/catalog/item/<item_id>/delete',methods=["GET","POST"])
 def delete_item(item_id):
     user = get_user()
     if not user:
         return redirect(url_for('unauthorized'))
-
     item = session.query(CatalogItem).filter_by(id=item_id).one()
+    if item.user_id is not user.id:
+        return redirect(url_for('unauthorized'))
     if request.method == 'POST':
         session.delete(item)
         session.commit()
