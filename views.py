@@ -168,13 +168,13 @@ def gconnect():
 def list_category(category_id):
     categories = session.query(Category).all()
     items = session.query(CatalogItem).filter_by(category_id=category_id).all()
-    category = session.query(Category).filter_by(id=category_id).one()
+    category = session.query(Category).filter_by(id=category_id).one_or_none()
     user = get_user()
     return render_template('items.html', categories=categories, items=items, category=category, user=user)
 
 @app.route('/catalog/category/<category_id>/item/<item_id>')
 def show_item(category_id, item_id):
-    catalog_item = session.query(CatalogItem).filter_by(category_id=category_id, id=item_id).one()
+    catalog_item = session.query(CatalogItem).filter_by(category_id=category_id, id=item_id).one_or_none()
     user = get_user()
     return render_template('detailed-item.html', item=catalog_item, user=user)
 
@@ -216,7 +216,7 @@ def edit_item(item_id):
     if not user:
         print 'user error', user
         return redirect(url_for('unauthorized'))
-    item = session.query(CatalogItem).filter_by(id=item_id).one()
+    item = session.query(CatalogItem).filter_by(id=item_id).one_or_none()
     if item.user_id is not user.id:
         print 'user id not same as created id'
         return redirect(url_for('unauthorized'))
@@ -240,7 +240,7 @@ def delete_item(item_id):
     user = get_user()
     if not user:
         return redirect(url_for('unauthorized'))
-    item = session.query(CatalogItem).filter_by(id=item_id).one()
+    item = session.query(CatalogItem).filter_by(id=item_id).one_or_none()
     if item.user_id is not user.id:
         return redirect(url_for('unauthorized'))
     if request.method == 'POST':
