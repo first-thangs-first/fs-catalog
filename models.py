@@ -62,6 +62,7 @@ class CatalogItem(Base):
     def serialize(self):
         """Return object data in easily serializeable format"""
         return {
+            'id': self.id,
             'user_id': self.user_id,
             'category_id': self.category_id,
             'name': self.name,

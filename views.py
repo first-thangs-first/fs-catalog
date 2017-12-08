@@ -275,6 +275,14 @@ def api_list_category(category_name):
     json_result = jsonify(result)
     return json_result
 
+# api to search for arbitary item
+@app.route('/api/v1.0/catalogs/item/<item_id>/json')
+@auth.login_required
+def api_list_item(item_id):
+    item = session.query(CatalogItem).filter_by(id=item_id).one_or_none()
+    json_result = jsonify(item.serialize)
+    return json_result
+
 if __name__ == '__main__':
     app.debug = True
     app.secret_key = 'super_secret_key'
