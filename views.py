@@ -259,7 +259,20 @@ def api_list_catalogs():
         for item in items:
             result[category.name].append(item.serialize)
     json_result = jsonify(catalogs=result)
+    return json_result
 
+# api to search for arbitary category
+@app.route('/api/v1.0/catalogs/<category_name>/json')
+@auth.login_required
+def api_list_category(category_name):
+    result = {}
+    category = session.query(Category).filter_by(name=category_name.capitalize()).one_or_none()
+    if category:
+        items = session.query(CatalogItem).filter_by(category_id=category.id)
+        result[category.name] = []
+        for i in items:
+            result[category.name].append(i.serialize)
+    json_result = jsonify(result)
     return json_result
 
 if __name__ == '__main__':
