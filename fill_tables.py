@@ -4,7 +4,8 @@ from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import relationship, sessionmaker
 from sqlalchemy import create_engine
 
-import string, random
+import string
+import random
 
 engine = create_engine('sqlite:///catalog.db')
 
@@ -24,7 +25,7 @@ records = {
 def make_gibberish(num_of_words):
     result = []
     for i in xrange(num_of_words + 1):
-        w = [random.choice(string.ascii_lowercase) for x in xrange(random.randint(1,10))]
+        w = [random.choice(string.ascii_lowercase) for x in xrange(random.randint(1, 10))]  # noqa
         word = ''.join(w)
         result.append(word)
     return result[0].capitalize() + string.join(result[1:], " ") + "end."
