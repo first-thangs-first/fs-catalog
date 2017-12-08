@@ -10,8 +10,11 @@ nav {
     color: #fff;
     display: flex;
     margin-bottom: 40px;
-    padding: 10px;
     justify-content: space-between
+}
+
+nav h1, nav h2, nav h3 {
+    margin: 10px;
 }
 
 main {

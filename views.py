@@ -249,7 +249,7 @@ def delete_item(item_id):
         return redirect(url_for('list_category', category_id=item.category_id))
     return render_template('delete.html', item=item, user=user)
 
-@app.route('/api/v1.0/catalogs')
+@app.route('/api/v1.0/catalogs/json')
 @auth.login_required
 def api_list_catalogs():
     result = {}
