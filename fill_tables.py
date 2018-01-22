@@ -7,7 +7,8 @@ from sqlalchemy import create_engine
 import string
 import random
 
-engine = create_engine('sqlite:///catalog.db')
+#engine = create_engine('sqlite:///catalog.db')
+engine = create_engine('postgresql://catalog:catalog@localhost:5432/catalog')
 
 Base.metadata.bind = engine
 DBSession = sessionmaker(bind=engine)

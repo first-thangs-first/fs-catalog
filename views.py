@@ -15,7 +15,8 @@ import google_auth_oauthlib.flow
 from googleapiclient.discovery import build
 
 
-engine = create_engine('sqlite:///catalog.db')
+#engine = create_engine('sqlite:///catalog.db')
+engine = create_engine('postgresql://catalog:catalog@localhost:5432/catalog')
 Base.metadata.bind = engine
 DBSession = sessionmaker(bind=engine)
 session = DBSession()
@@ -47,17 +48,21 @@ def revoke_google_access():
 def get_user():
     user = None
     if 'auth' in flask.session:
+        print "get user in first if"
         token = flask.session['auth']
         user_id = User.verify_auth_token(token)
         if user_id == 'Signature Expired':
+            print "get user in user_id signature expired"
             del flask.session['auth']
             del flask.session['credentials']
             return None
         if user_id:
+            print "get user if user_id"
             user = session.query(User).filter_by(id=user_id).first()
+            print "user id", user_id, "user", user
             return user
     else:
-        print 'auth not in session', flask.session
+        print 'auth not in session inside get user', flask.session
         return user
 
 
@@ -171,7 +176,7 @@ def gconnect():
         session.commit()
     token = user.generate_auth_token()
     flask.session['auth'] = token
-
+    print flask.session, "session auth"
     return flask.redirect(url_for('index'))
 
 
@@ -266,12 +271,14 @@ def delete_item(item_id):
     if not user:
         return redirect(url_for('unauthorized'))
     item = session.query(CatalogItem).filter_by(id=item_id).one_or_none()
+    category_id = item.category_id
     if item.user_id is not user.id:
         return redirect(url_for('unauthorized'))
     if request.method == 'POST':
         session.delete(item)
         session.commit()
-        return redirect(url_for('list_category', category_id=item.category_id))
+        print "session auth inside delete_item", flask.session['auth']
+        return redirect(url_for('list_category', category_id=category_id))
     return render_template('delete.html', item=item, user=user)
 
 

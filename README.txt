@@ -14,4 +14,14 @@ python fill_tables.py
 python views.py
 ```
 
-View from browser at localhost:8000
+View from browser at localhost:8080
+
+# Apache Setup
+
+```
+root@vagrant:/vagrant/Webapp# sudo su postgres
+postgres@vagrant:/vagrant/Webapp$ createdb catalog
+postgres@vagrant:/vagrant/Webapp$ psql -s catalog
+catalog=# create user catalog password catalog;
+catalog=# GRANT ALL PRIVILEGES ON DATABASE catalog TO catalog
+```

@@ -58,7 +58,8 @@ class CatalogItem(Base):
     id = Column(Integer, primary_key=True)
     description = Column(String(250))
     user_id = Column(Integer, ForeignKey('user.id'))
-    user = relationship(User, cascade="all, delete-orphan", single_parent=True)
+    #user = relationship(User, cascade="all, delete-orphan", single_parent=True)
+    user = relationship(User)
     category_id = Column(Integer, ForeignKey('category.id'))
     category = relationship(Category,
                             backref=backref("category", cascade="all,delete"))
@@ -75,6 +76,7 @@ class CatalogItem(Base):
         }
 
 
-engine = create_engine('sqlite:///catalog.db')
+# engine = create_engine('sqlite:///catalog.db')
+engine = create_engine('postgresql://catalog:catalog@localhost:5432/catalog')
 
 Base.metadata.create_all(engine)
